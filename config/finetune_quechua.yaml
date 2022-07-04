@@ -1,13 +1,14 @@
-distributed_training:
-  ddp_backend: legacy_ddp
-  distributed_world_size: 2
+#distributed_training:
+#  ddp_backend: legacy_ddp
+#  distributed_world_size: 2
 
 common:
   log_interval: 100 # ####################
   fp16: true
   log_format: json
-  memory_efficient_fp16: false
-  on_cpu_convert_precision: false
+  cpu: true
+#  memory_efficient_fp16: false
+#  on_cpu_convert_precision: false
 
 checkpoint:
   save_interval_updates: 1000 # Cada cuanto salvar #######################################################################
@@ -20,14 +21,14 @@ task:
   max_sample_size: 400000 #25 seconds (400000/16000)
   min_sample_size: 16000 #1 seconds
   _name: audio_finetuning
-  data: /data/IBERSPEECH2022/
+  data: /home/ivan/AMERICAS/americasnlp2022/DATA/Quechua
   normalize: true
   labels: ltr
 
 dataset:
   validate_interval_updates: 1000 # Validar cada 1000 updates #####################################################
-  train_subset: TRAIN_trainevaldev1dev2_2018 # ####################
-  valid_subset: test_rtve # ####################
+  train_subset: train_quechua # ####################
+  valid_subset: dev_quechua # ####################
   max_tokens: 400000 # 25 seconds
   num_workers: 6
   skip_invalid_size_inputs_valid_test: true
@@ -38,7 +39,7 @@ criterion:
   zero_infinity: true
 
 optimization:
-  max_update: 50000 #MAX UPDATES  #######################################################################
+  max_update: 10000 #MAX UPDATES  #######################################################################
   lr: [0.0001] # 0.00005, 0.0003]
   sentence_avg: true
   update_freq: [10]
@@ -54,7 +55,7 @@ lr_scheduler:
   final_lr_scale: 0.05
 
 model:
-  freeze_finetune_updates: 10000 # FREEZE UPDATES. ENTRE 30% y 50% ## Objetivo un 40%
+  freeze_finetune_updates: 2000 # FREEZE UPDATES. ENTRE 30% y 50% ## Objetivo un 40%
   _name: wav2vec_ctc
   w2v_path: /home/ivan/MODELS_W2V2/xlsr2_300m.pt
   apply_mask: true
