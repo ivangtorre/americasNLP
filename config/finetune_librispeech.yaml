@@ -1,0 +1,94 @@
+common:
+  log_interval: 100 # ####################
+  fp16: true
+  log_format: json
+  memory_efficient_fp16: false
+  on_cpu_convert_precision: false
+
+checkpoint:
+  save_interval_updates: 500 # Cada cuanto salvar #######################################################################
+  keep_interval_updates: 3
+  no_epoch_checkpoints: true
+  best_checkpoint_metric: wer
+  save_interval: 500 # Cada cuantas epocas salvar
+
+task:
+  max_sample_size: 320000 #20 seconds (320000/16000)
+  min_sample_size: 32000 #2 seconds
+  _name: audio_finetuning
+  data: /home/ivan/DATA/LibriSpeech/
+  normalize: true
+  labels: ltr
+
+dataset:
+  validate_interval_updates: 500 # Validar cada 500 updates #####################################################
+  train_subset: train-clean-10h # ####################
+  valid_subset: dev-clean # ####################
+  max_tokens: 640000 # 40 seconds
+  num_workers: 10
+  skip_invalid_size_inputs_valid_test: true
+  validate_interval: 10000 # Cada X EPOCAS validar
+
+criterion:
+  _name: ctc
+  zero_infinity: true
+
+## 1h 10k, 10h 20k, 100h 50k, 1000h 300k
+## Mi config final:
+# 10h 20k updates, 10k freeze
+# 100h 50k updates, 10k freeze
+# 500h 150k updates, 15k freeze
+
+## Mi config pruebas:
+# 10h -- 2000 updates -- 800 freeze
+
+## Escala
+# 100h -- 20k updates -- 10k freeze
+# 100h -- 50k updates -- 10k freeze
+optimization:
+  max_update: 1000 #MAX UPDATES  #######################################################################
+  lr: [0.0003] # 0.00005, 0.0003]
+  sentence_avg: true
+  update_freq: [40]
+
+optimizer:
+  _name: adam
+  adam_betas: (0.9,0.98)
+  adam_eps: 1e-08
+
+lr_scheduler:
+  _name: tri_stage
+  phase_ratio: [0.1, 0.4, 0.5]
+  final_lr_scale: 0.05
+
+model:
+  freeze_finetune_updates: 800 # FREEZE UPDATES. ENTRE 30% y 50% ## Objetivo un 40%
+  _name: wav2vec_ctc
+  w2v_path: /home/ivan/MODELS_W2V2/xlsr2_300m.pt
+  apply_mask: true
+  mask_prob: 0.25 # Between 0.3 and 0.75
+  mask_channel_prob: 0.5 # Between 0.3 and 0.75
+  mask_channel_length: 64
+  layerdrop: 0.1
+  activation_dropout: 0.1
+  feature_grad_mult: 0.0
+  checkpoint_activations: false #saves GPU memory usage at the cost of some additional compute
+
+
+#  freeze_finetune_updates: 10000
+#FEAT_PROJ_DROPOUT=${18:-${FEAT_PROJ_DROPOUT:-0.05}}
+#LAYER_DROPOUT=${19:-${LAYER_DROPOUT:-0.05}}
+#ACCUM_STEPS=${20:-${ACCUM_STEPS:-256}}
+#MASK_TIME=${21:-${MASK_TIME:-0.065}}
+#HIDDEN_DROPOUT=${22:-${HIDDEN_DROPOUT:-0.025}}
+#ACTIVATION_DROPOUT=${23:-${ACTIVATION_DROPOUT:-0.01}}
+#ATTENTION_DROPOUT=${24:-${ATTENTION_DROPOUT:-0.036}}
+
+
+# channel mask prob.
+#timestep mask prob. channel mask prob. updates
+#10 min 0.075 0.008 12k
+#1 hour 0.075 0.004 13k
+#10 hours 0.065 0.004 20k
+#100 hours 0.05 0.008 50k
+#960 hours 0.05 0.0016 320k

@@ -1,0 +1,37 @@
+# @package _group_
+
+defaults:
+    - task: audio_finetuning
+    - model: null
+
+task:
+ _name: audio_finetuning
+ data: /data/IBERSPEECH2022/
+ max_sample_size: 560000 #20 seconds (320000/16000)
+ min_sample_size: 16000 #2 seconds
+ normalize: true
+ labels: ltr
+
+hydra:
+  run:
+    dir: ${common_eval.results_path}/${dataset.gen_subset}
+  sweep:
+#    dir: /checkpoint/${env:USER}/${env:PREFIX}/${common_eval.results_path}
+    subdir: ${dataset.gen_subset}
+
+common_eval:
+  results_path: null
+  path: null
+  post_process: letter
+  quiet: true
+
+dataset:
+  max_tokens: 3000000
+  batch_size: 1
+
+distributed_training:
+  distributed_world_size: 1
+
+decoding:
+  beam: 128
+  type: viterbi
